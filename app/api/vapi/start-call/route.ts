@@ -4,18 +4,30 @@ export async function POST(request: NextRequest) {
     try {
         const { userName, userId } = await request.json();
 
+        console.log("Starting VAPI call for:", { userName, userId });
+        
+        // DEBUG: Check if private key exists
+        const privateKey = process.env.VAPI_PRIVATE_KEY;
+        console.log("Private key exists:", !!privateKey);
+        console.log("Private key prefix:", privateKey?.substring(0, 10) + "...");
+        console.log("Workflow ID:", process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID);
+
+        if (!privateKey) {
+            return NextResponse.json(
+                { success: false, error: "VAPI_PRIVATE_KEY is not configured" },
+                { status: 500 }
+            );
+        }
+
         // Start a web call with the workflow
-        const response = await fetch('https://api.vapi.ai/call/web', {
+        const vapiResponse = await fetch('https://api.vapi.ai/call/web', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.NEXT_VAPI_PRIVATE_KEY}`, // Server-side only!
+                'Authorization': `Bearer ${privateKey}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                // Pass the workflow ID as assistantId (VAPI's convention)
                 assistantId: process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID,
-                
-                // Pass variables
                 assistant: {
                     variableValues: {
                         username: userName,
@@ -25,25 +37,38 @@ export async function POST(request: NextRequest) {
             }),
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("VAPI Error:", errorData);
+        // Log the response for debugging
+        console.log("VAPI Response Status:", vapiResponse.status);
+        
+        const responseText = await vapiResponse.text();
+        console.log("VAPI Response Body:", responseText);
+
+        if (!vapiResponse.ok) {
+            let errorData;
+            try {
+                errorData = JSON.parse(responseText);
+            } catch {
+                errorData = { message: responseText };
+            }
+            console.error("VAPI API Error:", errorData);
             return NextResponse.json(
                 { success: false, error: errorData },
-                { status: response.status }
+                { status: vapiResponse.status }
             );
         }
 
-        const data = await response.json();
+        const data = JSON.parse(responseText);
+        
+        console.log("VAPI call created successfully:", data);
         
         return NextResponse.json({
             success: true,
-            webCallUrl: data.webCallUrl, // URL to connect web SDK
+            webCallUrl: data.webCallUrl,
             callId: data.id,
         });
 
     } catch (error: unknown) {
-        console.error("Error:", error);
+        console.error("Error starting call:", error);
         return NextResponse.json(
             { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
