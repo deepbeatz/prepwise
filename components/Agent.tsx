@@ -128,10 +128,6 @@ const Agent = ({
 
         const workflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
 
-        console.log("Attempting to start with ID:", workflowId);
-        console.log("ID type:", workflowId?.startsWith('wf_') ? 'Workflow' :
-            workflowId?.startsWith('asst_') ? 'Assistant' : 'Unknown');
-
         try {
             await vapi.start(workflowId!, {
                 variableValues: {
