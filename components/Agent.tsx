@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-// import { vapi } from "@/lib/vapi.sdk";
+import { vapi } from "@/lib/vapi.sdk";
 // import { interviewer } from "@/constants";
 // import { createFeedback } from "@/lib/actions/general.action";
 
@@ -16,137 +16,163 @@ enum CallStatus {
     FINISHED = "FINISHED",
 }
 
-// interface SavedMessage {
-//   role: "user" | "system" | "assistant";
-//   content: string;
-// }
+interface SavedMessage {
+    role: "user" | "system" | "assistant";
+    content: string;
+}
 
 const Agent = ({
     userName,
-    //   userId,
-    //   interviewId,
-    //   feedbackId,
-    //   type,
-    //   questions,
+    userId,
+    // interviewId,
+    // feedbackId,
+    type,
+    // questions,
 }: AgentProps) => {
-    const isSpeaking = true;
-    const messages = ["hi 1", "hi 2"];
-    const lastMessage = messages[messages.length - 1];
-    //   const router = useRouter();
-      const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
-    //   const [messages, setMessages] = useState<SavedMessage[]>([]);
-    //   const [isSpeaking, setIsSpeaking] = useState(false);
-    //   const [lastMessage, setLastMessage] = useState<string>("");
+    const router = useRouter();
+    const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
+    const [messages, setMessages] = useState<SavedMessage[]>([]);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    // const [lastMessage, setLastMessage] = useState<string>("");
 
-    //   useEffect(() => {
-    //     const onCallStart = () => {
-    //       setCallStatus(CallStatus.ACTIVE);
-    //     };
+    useEffect(() => {
+        const onCallStart = () => {
+            setCallStatus(CallStatus.ACTIVE);
+        };
 
-    //     const onCallEnd = () => {
-    //       setCallStatus(CallStatus.FINISHED);
-    //     };
+        const onCallEnd = () => {
+            setCallStatus(CallStatus.FINISHED);
+        };
 
-    //     const onMessage = (message: Message) => {
-    //       if (message.type === "transcript" && message.transcriptType === "final") {
-    //         const newMessage = { role: message.role, content: message.transcript };
-    //         setMessages((prev) => [...prev, newMessage]);
-    //       }
-    //     };
+        const onMessage = (message: Message) => {
+            if (message.type === "transcript" && message.transcriptType === "final") {
+                const newMessage = { role: message.role, content: message.transcript };
+                setMessages((prev) => [...prev, newMessage]);
+            }
+        };
 
-    //     const onSpeechStart = () => {
-    //       console.log("speech start");
-    //       setIsSpeaking(true);
-    //     };
+        const onSpeechStart = () => {
+            console.log("speech start");
+            setIsSpeaking(true);
+        };
 
-    //     const onSpeechEnd = () => {
-    //       console.log("speech end");
-    //       setIsSpeaking(false);
-    //     };
+        const onSpeechEnd = () => {
+            console.log("speech end");
+            setIsSpeaking(false);
+        };
 
-    //     const onError = (error: Error) => {
-    //       console.log("Error:", error);
-    //     };
+        const onError = (error: Error) => {
+            console.log("Error:", error);
+        };
 
-    //     vapi.on("call-start", onCallStart);
-    //     vapi.on("call-end", onCallEnd);
-    //     vapi.on("message", onMessage);
-    //     vapi.on("speech-start", onSpeechStart);
-    //     vapi.on("speech-end", onSpeechEnd);
-    //     vapi.on("error", onError);
+        vapi.on("call-start", onCallStart);
+        vapi.on("call-end", onCallEnd);
+        vapi.on("message", onMessage);
+        vapi.on("speech-start", onSpeechStart);
+        vapi.on("speech-end", onSpeechEnd);
+        vapi.on("error", onError);
 
-    //     return () => {
-    //       vapi.off("call-start", onCallStart);
-    //       vapi.off("call-end", onCallEnd);
-    //       vapi.off("message", onMessage);
-    //       vapi.off("speech-start", onSpeechStart);
-    //       vapi.off("speech-end", onSpeechEnd);
-    //       vapi.off("error", onError);
-    //     };
-    //   }, []);
+        return () => {
+            vapi.off("call-start", onCallStart);
+            vapi.off("call-end", onCallEnd);
+            vapi.off("message", onMessage);
+            vapi.off("speech-start", onSpeechStart);
+            vapi.off("speech-end", onSpeechEnd);
+            vapi.off("error", onError);
+        };
+    }, []);
 
-    //   useEffect(() => {
-    //     if (messages.length > 0) {
-    //       setLastMessage(messages[messages.length - 1].content);
-    //     }
+    useEffect(() => {
+        // if (messages.length > 0) {
+        //     setLastMessage(messages[messages.length - 1].content);
+        // }
 
-    //     const handleGenerateFeedback = async (messages: SavedMessage[]) => {
-    //       console.log("handleGenerateFeedback");
+        // const handleGenerateFeedback = async (messages: SavedMessage[]) => {
+        //     console.log("handleGenerateFeedback");
 
-    //       const { success, feedbackId: id } = await createFeedback({
-    //         interviewId: interviewId!,
-    //         userId: userId!,
-    //         transcript: messages,
-    //         feedbackId,
-    //       });
+        //     const { success, feedbackId: id } = await createFeedback({
+        //         interviewId: interviewId!,
+        //         userId: userId!,
+        //         transcript: messages,
+        //         feedbackId,
+        //     });
 
-    //       if (success && id) {
-    //         router.push(`/interview/${interviewId}/feedback`);
-    //       } else {
-    //         console.log("Error saving feedback");
-    //         router.push("/");
-    //       }
-    //     };
+        //     if (success && id) {
+        //         router.push(`/interview/${interviewId}/feedback`);
+        //     } else {
+        //         console.log("Error saving feedback");
+        //         router.push("/");
+        //     }
+        // };
 
-    //     if (callStatus === CallStatus.FINISHED) {
-    //       if (type === "generate") {
-    //         router.push("/");
-    //       } else {
-    //         handleGenerateFeedback(messages);
-    //       }
-    //     }
-    //   }, [messages, callStatus, feedbackId, interviewId, router, type, userId]);
+        if (callStatus === CallStatus.FINISHED) {
+            router.push("/");
+            // if (type === "generate") {
+            //     router.push("/");
+            // } else {
+            //     handleGenerateFeedback(messages);
+            // }
+        }
+    }, [
+        messages,
+        callStatus,
+        // feedbackId,
+        // interviewId,
+        router,
+        type,
+        userId
+    ]);
 
-    //   const handleCall = async () => {
-    //     setCallStatus(CallStatus.CONNECTING);
+    const handleCall = async () => {
+        setCallStatus(CallStatus.CONNECTING);
 
-    //     if (type === "generate") {
-    //       await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-    //         variableValues: {
-    //           username: userName,
-    //           userid: userId,
-    //         },
-    //       });
-    //     } else {
-    //       let formattedQuestions = "";
-    //       if (questions) {
-    //         formattedQuestions = questions
-    //           .map((question) => `- ${question}`)
-    //           .join("\n");
-    //       }
+        const workflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
 
-    //       await vapi.start(interviewer, {
-    //         variableValues: {
-    //           questions: formattedQuestions,
-    //         },
-    //       });
-    //     }
-    //   };
+        console.log("Attempting to start with ID:", workflowId);
+        console.log("ID type:", workflowId?.startsWith('wf_') ? 'Workflow' :
+            workflowId?.startsWith('asst_') ? 'Assistant' : 'Unknown');
 
-    //   const handleDisconnect = () => {
-    //     setCallStatus(CallStatus.FINISHED);
-    //     vapi.stop();
-    //   };
+        try {
+            await vapi.start(workflowId!, {
+                variableValues: {
+                    username: userName,
+                    userid: userId,
+                },
+            });
+        } catch (error: any) {
+            console.error("Full error:", error);
+            setCallStatus(CallStatus.INACTIVE);
+        }
+
+        // if (type === "generate") {
+        //     await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
+        //         variableValues: {
+        //             username: userName,
+        //             userid: userId,
+        //         },
+        //     });
+        // } else {
+        //     let formattedQuestions = "";
+        //     if (questions) {
+        //         formattedQuestions = questions
+        //             .map((question) => `- ${question}`)
+        //             .join("\n");
+        //     }
+        // await vapi.start(interviewer, {
+        //     variableValues: {
+        //         questions: formattedQuestions,
+        //     },
+        // });
+        // }
+    };
+
+    const handleDisconnect = () => {
+        setCallStatus(CallStatus.FINISHED);
+        vapi.stop();
+    };
+
+    const lastMessage = messages[messages.length - 1]?.content;
+    const isCallInactiveOrFinished = callStatus === CallStatus.INACTIVE || CallStatus.FINISHED;
 
     return (
         <>
@@ -201,7 +227,7 @@ const Agent = ({
                 {callStatus !== "ACTIVE" ? (
                     <button
                         className="relative btn-call"
-                    // onClick={() => handleCall()}
+                        onClick={() => handleCall()}
                     >
                         <span
                             className={cn(
@@ -211,15 +237,13 @@ const Agent = ({
                         />
 
                         <span className="relative">
-                            {callStatus === "INACTIVE" || callStatus === "FINISHED"
-                                ? "Call"
-                                : ". . ."}
+                            {isCallInactiveOrFinished ? "Call" : ". . ."}
                         </span>
                     </button>
                 ) : (
                     <button
                         className="btn-disconnect"
-                    // onClick={() => handleDisconnect()}
+                        onClick={() => handleDisconnect()}
                     >
                         End
                     </button>
