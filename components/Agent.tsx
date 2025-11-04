@@ -123,77 +123,77 @@ const Agent = ({
         userId
     ]);
 
-    // const handleCall = async () => {
-    //     setCallStatus(CallStatus.CONNECTING);
-
-    //     const workflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
-
-    //     try {
-    //         await vapi.start(workflowId!, {
-    //             variableValues: {
-    //                 username: userName,
-    //                 userid: userId,
-    //             },
-    //         });
-    //     } catch (error: any) {
-    //         console.error("Full error:", error);
-    //         setCallStatus(CallStatus.INACTIVE);
-    //     }
-
-    //     // if (type === "generate") {
-    //     //     await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-    //     //         variableValues: {
-    //     //             username: userName,
-    //     //             userid: userId,
-    //     //         },
-    //     //     });
-    //     // } else {
-    //     //     let formattedQuestions = "";
-    //     //     if (questions) {
-    //     //         formattedQuestions = questions
-    //     //             .map((question) => `- ${question}`)
-    //     //             .join("\n");
-    //     //     }
-    //     // await vapi.start(interviewer, {
-    //     //     variableValues: {
-    //     //         questions: formattedQuestions,
-    //     //     },
-    //     // });
-    //     // }
-    // };
-
     const handleCall = async () => {
         setCallStatus(CallStatus.CONNECTING);
 
+        const workflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
+
         try {
-            console.log("Creating call via API...");
-
-            // First, create the call via your backend API
-            const response = await fetch('/api/vapi/start-call', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userName, userId }),
+            await vapi.start(workflowId!, {
+                variableValues: {
+                    username: userName,
+                    userid: userId,
+                },
             });
-
-            const data = await response.json();
-
-            if (!data.success || !data.webCallUrl) {
-                throw new Error(data.error || 'Failed to start call');
-            }
-
-            console.log("Call created, connecting SDK...");
-
-            // Then connect the VAPI SDK to that call using the webCallUrl
-            await vapi.start(data.webCallUrl);
-
-            console.log("Call connected successfully!");
-
-        } catch (error) {
-            console.error("Call start error:", error);
+        } catch (error: unknown) {
+            console.error("Full error:", error);
             setCallStatus(CallStatus.INACTIVE);
-            alert(`Failed to start call: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
+
+        // if (type === "generate") {
+        //     await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
+        //         variableValues: {
+        //             username: userName,
+        //             userid: userId,
+        //         },
+        //     });
+        // } else {
+        //     let formattedQuestions = "";
+        //     if (questions) {
+        //         formattedQuestions = questions
+        //             .map((question) => `- ${question}`)
+        //             .join("\n");
+        //     }
+        // await vapi.start(interviewer, {
+        //     variableValues: {
+        //         questions: formattedQuestions,
+        //     },
+        // });
+        // }
     };
+
+    // const handleCall = async () => {
+    //     setCallStatus(CallStatus.CONNECTING);
+
+    //     try {
+    //         console.log("Creating call via API...");
+
+    //         // First, create the call via your backend API
+    //         const response = await fetch('/api/vapi/start-call', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({ userName, userId }),
+    //         });
+
+    //         const data = await response.json();
+
+    //         if (!data.success || !data.webCallUrl) {
+    //             throw new Error(data.error || 'Failed to start call');
+    //         }
+
+    //         console.log("Call created, connecting SDK...");
+
+    //         // Then connect the VAPI SDK to that call using the webCallUrl
+    //         await vapi.start(data.webCallUrl);
+
+    //         console.log("Call connected successfully!");
+
+    //     } catch (error) {
+    //         console.error("Call start error:", error);
+    //         setCallStatus(CallStatus.INACTIVE);
+    //         alert(`Failed to start call: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    //     }
+    // };
 
     const handleDisconnect = () => {
         setCallStatus(CallStatus.FINISHED);
