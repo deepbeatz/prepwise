@@ -1,7 +1,3 @@
-// backend api route where the vapi agent will call after colleting infro from the user about the kind of interview view to be generated
-// this api will retrive data from vapi, send to gemini, get response, ans tehn store the interview questions from the response from gemini in firebase firestore
-// so this is not a frontend route, it gets called automatically from the agent component file (type="generate") and the user doesnt know about it, thats why its a backend route....
-
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 
@@ -9,16 +5,43 @@ import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 
 export async function POST(request: Request) {
-    const { type, role, level, techstack, amount, userid } = await request.json();
-
     try {
-        //renaming "text" that comes as reponse from generateText() to "questions"
+        // Parse the request body
+        const body = await request.json();
+
+        // LOG EVERYTHING for debugging
+        console.log("=== VAPI Request Received ===");
+        console.log("Full body:", JSON.stringify(body, null, 2));
+        console.log("============================");
+
+        // VAPI might send data in different formats, handle both:
+        // Option 1: Direct properties
+        let { type, role, level, techstack, amount, userid } = body;
+
+        // Option 2: Nested in a "message" or "data" property
+        if (!role && body.message) {
+            ({ type, role, level, techstack, amount, userid } = body.message);
+        }
+
+        // Validate required fields
+        if (!type || !role || !level || !amount || !userid) {
+            console.error("Missing required fields:", { type, role, level, techstack, amount, userid });
+            return Response.json({
+                success: false,
+                error: "Missing required fields",
+                received: body
+            }, { status: 400 });
+        }
+
+        console.log("Processing interview generation:", { type, role, level, techstack, amount, userid });
+
+        // Generate questions using Gemini
         const { text: questions } = await generateText({
-            model: google("gemini-2.0-flash-001"),
+            model: google("gemini-2.0-flash-exp-0827"),
             prompt: `Prepare questions for a job interview.
         The job role is ${role}.
         The job experience level is ${level}.
-        The tech stack used in the job is: ${techstack}.
+        The tech stack used in the job is: ${techstack || "general"}.
         The focus between behavioural and technical questions should lean towards: ${type}.
         The amount of questions required is: ${amount}.
         Please return only the questions, without any additional text.
@@ -27,28 +50,62 @@ export async function POST(request: Request) {
         ["Question 1", "Question 2", "Question 3"]`,
         });
 
+        console.log("Generated questions:", questions);
+
+        // Parse and validate questions
+        let parsedQuestions;
+        try {
+            parsedQuestions = JSON.parse(questions);
+            if (!Array.isArray(parsedQuestions)) {
+                throw new Error("Questions is not an array");
+            }
+        } catch (parseError) {
+            console.error("Failed to parse questions:", parseError);
+            // Fallback: split by newlines if JSON parsing fails
+            parsedQuestions = questions
+                .split('\n')
+                .filter(q => q.trim().length > 0)
+                .map(q => q.replace(/^[\d\.\-\*\s]+/, '').trim());
+        }
+
         const interview = {
             role: role,
             type: type,
             level: level,
-            techstack: techstack.split(","),
-            questions: JSON.parse(questions),
+            techstack: techstack ? (techstack as string).split(",").map((t: string) => t.trim()) : [],
+            questions: parsedQuestions,
             userId: userid,
             finalized: true,
             coverImage: getRandomInterviewCover(),
-            //later we have to implement logic for actual valid interview cover images based on technologies being interviewed on
             createdAt: new Date().toISOString(),
         };
 
-        await db.collection("interviews").add(interview);
+        console.log("Saving interview to Firestore...");
+        const docRef = await db.collection("interviews").add(interview);
+        console.log("Interview saved with ID:", docRef.id);
 
-        return Response.json({ success: true }, { status: 200 });
-    } catch (error) {
-        console.error("Error:", error);
-        return Response.json({ success: false, error: error }, { status: 500 });
+        return Response.json({
+            success: true,
+            interviewId: docRef.id
+        }, { status: 200 });
+
+    } catch (error: unknown) {
+        console.error("=== API Error ===");
+        console.error("Error message:", error instanceof Error ? error.message : "Unknown error");
+        console.error("Error stack:", error instanceof Error ? error.stack : undefined);
+        console.error("================");
+
+        return Response.json({
+            success: false,
+            error: error instanceof Error ? error.message : "Internal server error"
+        }, { status: 500 });
     }
 }
 
 export async function GET() {
-    return Response.json({ success: true, data: "Thank you!" }, { status: 200 });
+    return Response.json({
+        success: true,
+        message: "VAPI Generate API is running",
+        timestamp: new Date().toISOString()
+    }, { status: 200 });
 }
