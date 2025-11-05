@@ -56,7 +56,6 @@ import { google } from "@ai-sdk/google";
 
 import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
-import { getCurrentUser } from "@/lib/actions/auth.action";
 
 export async function POST(request: Request) {
   try {
@@ -75,12 +74,11 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const { type, role, level, techstack, amount } = body;
-    const userid = getCurrentUser();
+    const { type, role, level, techstack, amount, userid } = body;
 
     // Log all received values
     console.log("Received values:", {
-      type, role, level, techstack, amount
+      type, role, level, techstack, amount, userid
     });
 
     // Validate ALL required fields
@@ -89,6 +87,7 @@ export async function POST(request: Request) {
     if (!role) missingFields.push('role');
     if (!level) missingFields.push('level');
     if (!amount) missingFields.push('amount');
+    if (!userid) missingFields.push('userid');
 
     if (missingFields.length > 0) {
       console.error("Missing required fields:", missingFields);
