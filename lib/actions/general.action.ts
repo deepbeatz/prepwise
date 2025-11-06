@@ -7,23 +7,25 @@ import { db } from "@/firebase/admin";
 import { feedbackSchema } from "@/constants";
 
 export async function createFeedback(params: CreateFeedbackParams) {
-    const { interviewId, userId, transcript, feedbackId } = params;
+    const {
+        interviewId,
+        userId,
+        transcript,
+        // feedbackId
+    } = params;
 
     try {
         const formattedTranscript = transcript
             .map(
-                (sentence: { role: string; content: string }) =>
+                (sentence: { role: string; content: string; }) =>
                     `- ${sentence.role}: ${sentence.content}\n`
             )
             .join("");
 
-        const { object } = await generateObject({
-            model: google("gemini-2.0-flash-001",
-                // {
-                //     structuredOutputs: false,
-                // }
-            ),
+        const {object} = await generateObject({
+            model: google("gemini-2.0-flash-001"),
             schema: feedbackSchema,
+            temperature: 0.3,
             prompt: `
         You are an AI interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories. Be thorough and detailed in your analysis. Don't be lenient with the candidate. If there are mistakes or areas for improvement, point them out.
         Transcript:
@@ -40,7 +42,15 @@ export async function createFeedback(params: CreateFeedbackParams) {
                 "You are a professional interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories",
         });
 
-        const feedback = {
+        // if (!result?.object) {
+        //     console.log("Failed to generate feedback (from general.action.ts file)!");
+        //     throw new Error('Failed to generate feedback');
+        // }
+
+        // Validate schema at runtime
+        // const validatedFeedback = feedbackSchema.parse(result.object);
+
+        const feedback = await db.collection("feedback").add({
             interviewId: interviewId,
             userId: userId,
             totalScore: object.totalScore,
@@ -49,22 +59,21 @@ export async function createFeedback(params: CreateFeedbackParams) {
             areasForImprovement: object.areasForImprovement,
             finalAssessment: object.finalAssessment,
             createdAt: new Date().toISOString(),
-        };
+        });
 
-        let feedbackRef;
+        // const feedbackRef = feedbackId
+        //     ? db.collection("feedback").doc(feedbackId)
+        //     : db.collection("feedback").doc();
 
-        if (feedbackId) {
-            feedbackRef = db.collection("feedback").doc(feedbackId);
-        } else {
-            feedbackRef = db.collection("feedback").doc();
-        }
+        // await feedbackRef.set(feedback);
 
-        await feedbackRef.set(feedback);
-
-        return { success: true, feedbackId: feedbackRef.id };
+        return { success: true, feedbackId: feedback.id };
     } catch (error) {
-        console.error("Error saving feedback:", error);
-        return { success: false };
+        console.log("Error saving feedback (from general.action.ts file):",error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
     }
 }
 

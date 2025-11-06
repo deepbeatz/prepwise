@@ -8,7 +8,6 @@ import {
   getLatestInterviews,
 } from "@/lib/actions/general.action";
 import InterviewCard from "@/components/InterviewCard";
-import { dummyInterviews } from "@/constants";
 
 const Home = async () => {
   const user = await getCurrentUser();
@@ -78,9 +77,9 @@ const Home = async () => {
         <h2>Take Interviews</h2>
         <div className="interviews-section">
           {/* <p>No interviews available</p> */}
-          {dummyInterviews.map((interview)=>(
+          {/* {dummyInterviews.map((interview)=>(
             <InterviewCard {... interview} key={interview.id}/>
-          ))}
+          ))} */}
           {hasUpcomingInterviews ? (
             latestInterviews?.map((interview) => (
               <InterviewCard
